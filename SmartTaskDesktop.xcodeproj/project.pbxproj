@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F40FC8F32CAE60FB00198BFC /* SmartTaskDesktop.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = F40FC8F22CAE60FB00198BFC /* SmartTaskDesktop.entitlements */; };
+		F40FC8F52CAE624500198BFC /* swift.gitignore in Resources */ = {isa = PBXBuildFile; fileRef = F40FC8F42CAE623E00198BFC /* swift.gitignore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F40FC8BE2CAE30CE00198BFC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +32,8 @@
 		F40FC8AA2CAE30CC00198BFC /* SmartTaskDesktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartTaskDesktop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F40FC8BD2CAE30CE00198BFC /* SmartTaskDesktopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SmartTaskDesktopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F40FC8C72CAE30CE00198BFC /* SmartTaskDesktopUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SmartTaskDesktopUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F40FC8F22CAE60FB00198BFC /* SmartTaskDesktop.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SmartTaskDesktop.entitlements; sourceTree = "<group>"; };
+		F40FC8F42CAE623E00198BFC /* swift.gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = swift.gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +82,8 @@
 		F40FC8A12CAE30CC00198BFC = {
 			isa = PBXGroup;
 			children = (
+				F40FC8F42CAE623E00198BFC /* swift.gitignore */,
+				F40FC8F22CAE60FB00198BFC /* SmartTaskDesktop.entitlements */,
 				F40FC8AC2CAE30CC00198BFC /* SmartTaskDesktop */,
 				F40FC8C02CAE30CE00198BFC /* SmartTaskDesktopTests */,
 				F40FC8CA2CAE30CE00198BFC /* SmartTaskDesktopUITests */,
@@ -175,6 +184,7 @@
 				TargetAttributes = {
 					F40FC8A92CAE30CC00198BFC = {
 						CreatedOnToolsVersion = 16.0;
+						LastSwiftMigration = 1600;
 					};
 					F40FC8BC2CAE30CE00198BFC = {
 						CreatedOnToolsVersion = 16.0;
@@ -212,6 +222,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F40FC8F32CAE60FB00198BFC /* SmartTaskDesktop.entitlements in Resources */,
+				F40FC8F52CAE624500198BFC /* swift.gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -388,7 +400,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SmartTaskDesktop/SmartTaskDesktop.entitlements;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SmartTaskDesktop.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=*]" = SmartTaskDesktop.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development: rohan.adwankar@gmail.com (WLRMZRFCYL)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SmartTaskDesktop/Preview Content\"";
@@ -416,6 +432,8 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "SmartTaskDesktop-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.0;
@@ -427,7 +445,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SmartTaskDesktop/SmartTaskDesktop.entitlements;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = SmartTaskDesktop.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=*]" = SmartTaskDesktop.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development: rohan.adwankar@gmail.com (WLRMZRFCYL)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"SmartTaskDesktop/Preview Content\"";
@@ -455,6 +477,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "SmartTaskDesktop-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 2.0;
