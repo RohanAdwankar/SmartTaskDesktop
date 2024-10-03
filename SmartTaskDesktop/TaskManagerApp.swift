@@ -1,10 +1,3 @@
-//
-//  TaskManagerApp.swift
-//  SmartTaskDesktop
-//
-//  Created by Rohan Adwankar on 10/2/24.
-//
-
 import SwiftUI
 import SwiftData
 
