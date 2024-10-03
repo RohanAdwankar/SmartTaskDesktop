@@ -96,16 +96,16 @@ struct CalendarView: View {
 
     private var headerView: some View {
         HStack {
-            Button(action: { moveMonth(by: -1) }) {
+            Button(action: { moveTime(by: -1) }) {
                 Image(systemName: "chevron.left")
                     .foregroundColor(.primary)
             }
             Spacer()
-            Text(dateFormatter.string(from: currentMonth))
+            Text(headerTitle)
                 .font(.headline)
                 .foregroundColor(.primary)
             Spacer()
-            Button(action: { moveMonth(by: 1) }) {
+            Button(action: { moveTime(by: 1) }) {
                 Image(systemName: "chevron.right")
                     .foregroundColor(.primary)
             }
@@ -121,10 +121,44 @@ struct CalendarView: View {
         .padding()
     }
 
+    private var headerTitle: String {
+        switch mode {
+        case .month:
+            return dateFormatter.string(from: currentMonth)
+        case .week:
+            let weekInterval = calendar.dateInterval(of: .weekOfYear, for: selectedDate)!
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d"
+            let start = formatter.string(from: weekInterval.start)
+            let end = formatter.string(from: weekInterval.end - 1)
+            return "\(start) - \(end)"
+        case .day:
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE, MMM d"
+            return formatter.string(from: selectedDate)
+        }
+    }
+
+    private func moveTime(by value: Int) {
+        switch mode {
+        case .month:
+            if let newMonth = calendar.date(byAdding: .month, value: value, to: currentMonth) {
+                currentMonth = newMonth
+            }
+        case .week:
+            if let newWeek = calendar.date(byAdding: .weekOfYear, value: value, to: selectedDate) {
+                selectedDate = newWeek
+            }
+        case .day:
+            if let newDay = calendar.date(byAdding: .day, value: value, to: selectedDate) {
+                selectedDate = newDay
+            }
+        }
+    }
+
     private var monthView: some View {
         VStack(spacing: 0) {
             dayOfWeekHeader
-            // Adjusted LazyVGrid to remove spacing and padding
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
                 ForEach(daysInMonth(), id: \.self) { date in
                     if let date = date {
@@ -132,7 +166,6 @@ struct CalendarView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .border(Color.gray.opacity(0.2), width: 0.5)
                     } else {
-                        // Use Color.clear to maintain the grid structure
                         Color.clear
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .border(Color.gray.opacity(0.2), width: 0.5)
@@ -146,9 +179,11 @@ struct CalendarView: View {
         VStack(spacing: 0) {
             dayOfWeekHeader
             ScrollView {
-                VStack(spacing: 0) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
                     ForEach(calendar.daysOfWeek(for: selectedDate), id: \.self) { date in
-                        dayRow(for: date)
+                        dayCell(for: date)
+                            .frame(maxWidth: .infinity, minHeight: 100)
+                            .border(Color.gray.opacity(0.2), width: 0.5)
                     }
                 }
             }
@@ -163,7 +198,14 @@ struct CalendarView: View {
                 }
             }
         }
+        .navigationTitle("\(selectedDate, formatter: dayFormatter)")
     }
+
+    private let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMM d"
+        return formatter
+    }()
 
     private func dayCell(for date: Date) -> some View {
         let isToday = calendar.isDate(date, inSameDayAs: Date())
@@ -193,38 +235,44 @@ struct CalendarView: View {
         }
     }
 
-    private func dayRow(for date: Date) -> some View {
-        HStack(alignment: .top, spacing: 0) {
-            Text(calendar.shortWeekdaySymbols[calendar.component(.weekday, from: date) - 1])
-                .frame(width: 50, alignment: .leading)
-                .padding(.leading, 4)
-                .foregroundColor(.secondary)
-
-            tasksForDate(date)
-                .padding(4)
-                .background(Color.secondaryBackgroundColor)
-                .cornerRadius(8)
-                .shadow(radius: 1)
-        }
-        .frame(height: 100)
-        .padding(.horizontal)
-    }
-
     private func hourRow(for hour: Int) -> some View {
-        HStack(spacing: 0) {
-            Text("\(hour):00")
-                .frame(width: 50, alignment: .trailing)
+        let hourDate = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: selectedDate)!
+        let hourTasks = tasks.filter {
+            calendar.isDate($0.deadline, equalTo: hourDate, toGranularity: .hour)
+        }
+
+        return HStack(alignment: .top, spacing: 0) {
+            Text(String(format: "%02d:00", hour))
+                .frame(width: 60, alignment: .trailing)
                 .padding(.trailing, 8)
                 .foregroundColor(.secondary)
 
-            tasksForHour(hour)
+            Rectangle()
+                .fill(Color.clear)
+                .frame(width: 1)
+                .background(Color.gray.opacity(0.2))
+
+            if hourTasks.isEmpty {
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(height: 60)
+            } else {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(hourTasks) { task in
+                        Text(task.name)
+                            .font(.system(size: 12))
+                            .lineLimit(1)
+                            .padding(4)
+                            .background(taskColor(for: task))
+                            .foregroundColor(.white)
+                            .cornerRadius(4)
+                    }
+                }
                 .padding(4)
-                .background(Color.secondaryBackgroundColor)
-                .cornerRadius(8)
-                .shadow(radius: 1)
+            }
         }
         .frame(height: 60)
-        .padding(.horizontal)
+        .border(Color.gray.opacity(0.2), width: 0.5)
     }
 
     private func tasksForDate(_ date: Date) -> some View {
@@ -236,24 +284,6 @@ struct CalendarView: View {
                     .lineLimit(1)
                     .padding(4)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(taskColor(for: task))
-                    .foregroundColor(.white)
-                    .cornerRadius(4)
-            }
-        }
-    }
-
-    private func tasksForHour(_ hour: Int) -> some View {
-        let hourTasks = tasks.filter {
-            calendar.component(.hour, from: $0.deadline) == hour &&
-                calendar.isDate($0.deadline, inSameDayAs: selectedDate)
-        }
-        return VStack(alignment: .leading, spacing: 2) {
-            ForEach(hourTasks) { task in
-                Text(task.name)
-                    .font(.system(size: 12))
-                    .lineLimit(1)
-                    .padding(4)
                     .background(taskColor(for: task))
                     .foregroundColor(.white)
                     .cornerRadius(4)
@@ -291,12 +321,6 @@ struct CalendarView: View {
                 }
                 return nil
             }
-    }
-
-    private func moveMonth(by months: Int) {
-        if let newMonth = calendar.date(byAdding: .month, value: months, to: currentMonth) {
-            currentMonth = newMonth
-        }
     }
 
     private func taskColor(for task: Task) -> Color {
