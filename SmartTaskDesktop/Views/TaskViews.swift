@@ -1,32 +1,44 @@
 import SwiftUI
 import SwiftData
 
+// Define a custom color scheme
+extension Color {
+    static let primaryColor = Color.blue
+    static let accentColor = Color.orange
+    static let backgroundColor = Color(NSColor.windowBackgroundColor)
+    static let secondaryBackgroundColor = Color(NSColor.controlBackgroundColor)
+    static let taskBackgroundColor = Color(NSColor.controlBackgroundColor).opacity(0.5)
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var tasks: [Task]
     @State private var selectedView: ViewType = .calendar
     @State private var calendarMode: CalendarMode = .month
     @State private var showingAddTask = false
-    
+
     enum ViewType {
         case table, calendar
     }
-    
+
     enum CalendarMode {
         case month, week, day
     }
-    
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Updated Picker with consistent padding and background color
                 Picker("View", selection: $selectedView) {
                     Text("Table").tag(ViewType.table)
                     Text("Calendar").tag(ViewType.calendar)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
-                .background(Color(nsColor: .controlBackgroundColor).opacity(0.1))
-                
+                .background(Color.secondaryBackgroundColor)
+                .cornerRadius(8)
+                .padding(.horizontal)
+
                 if selectedView == .table {
                     TaskTableView(tasks: tasks)
                 } else {
@@ -40,14 +52,15 @@ struct ContentView: View {
                         Label("Add Task", systemImage: "plus")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+                    .tint(Color.accentColor)
                 }
             }
             .sheet(isPresented: $showingAddTask) {
                 AddEditTaskView()
             }
+            .accentColor(Color.accentColor)
+            .background(Color.backgroundColor)
         }
-        .accentColor(.blue)
     }
 }
 
@@ -56,18 +69,19 @@ struct CalendarView: View {
     @Binding var mode: ContentView.CalendarMode
     @State private var selectedDate = Date()
     @State private var currentMonth = Date()
-    
+
     private let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         return formatter
     }()
-    
+
     var body: some View {
         VStack(spacing: 0) {
             headerView
-            
+                .background(Color.secondaryBackgroundColor)
+
             switch mode {
             case .month:
                 monthView
@@ -77,22 +91,25 @@ struct CalendarView: View {
                 dayView
             }
         }
-        .background(Color(.windowBackgroundColor))
+        .background(Color.backgroundColor)
     }
-    
+
     private var headerView: some View {
         HStack {
             Button(action: { moveMonth(by: -1) }) {
                 Image(systemName: "chevron.left")
+                    .foregroundColor(.primary)
             }
             Spacer()
             Text(dateFormatter.string(from: currentMonth))
                 .font(.headline)
+                .foregroundColor(.primary)
             Spacer()
             Button(action: { moveMonth(by: 1) }) {
                 Image(systemName: "chevron.right")
+                    .foregroundColor(.primary)
             }
-            
+
             Picker("View", selection: $mode) {
                 Text("Month").tag(ContentView.CalendarMode.month)
                 Text("Week").tag(ContentView.CalendarMode.week)
@@ -103,35 +120,41 @@ struct CalendarView: View {
         }
         .padding()
     }
-    
+
     private var monthView: some View {
         VStack(spacing: 0) {
             dayOfWeekHeader
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 0) {
+            // Adjusted LazyVGrid to remove spacing and padding
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 0) {
                 ForEach(daysInMonth(), id: \.self) { date in
                     if let date = date {
                         dayCell(for: date)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .border(Color.gray.opacity(0.2), width: 0.5)
                     } else {
+                        // Use Color.clear to maintain the grid structure
                         Color.clear
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .border(Color.gray.opacity(0.2), width: 0.5)
                     }
                 }
             }
         }
     }
-    
+
     private var weekView: some View {
         VStack(spacing: 0) {
             dayOfWeekHeader
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(Calendar.current.daysOfWeek(for: selectedDate), id: \.self) { date in
+                    ForEach(calendar.daysOfWeek(for: selectedDate), id: \.self) { date in
                         dayRow(for: date)
                     }
                 }
             }
         }
     }
-    
+
     private var dayView: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -141,50 +164,69 @@ struct CalendarView: View {
             }
         }
     }
-    
+
     private func dayCell(for date: Date) -> some View {
         let isToday = calendar.isDate(date, inSameDayAs: Date())
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-        
-        return VStack {
+
+        return VStack(spacing: 2) {
             Text(String(calendar.component(.day, from: date)))
                 .font(.system(size: 14))
-                .foregroundColor(isToday ? .blue : .primary)
-                .frame(height: 20)
-            
+                .foregroundColor(isToday ? .white : .primary)
+                .frame(width: 24, height: 24)
+                .background(isToday ? Color.accentColor : Color.clear)
+                .clipShape(Circle())
+                .padding(4)
+
+            Spacer()
+
             tasksForDate(date)
+                .padding(4)
+
+            Spacer()
         }
-        .frame(height: 100)
-        .background(isSelected ? Color.blue.opacity(0.1) : Color.clear)
-        .border(Color.gray.opacity(0.2), width: 0.5)
+        .frame(maxWidth: .infinity, minHeight: 80)
+        .background(isSelected ? Color.accentColor.opacity(0.1) : Color.clear)
+        .contentShape(Rectangle()) // Ensures the entire cell is tappable
         .onTapGesture {
             selectedDate = date
         }
     }
-    
+
     private func dayRow(for date: Date) -> some View {
         HStack(alignment: .top, spacing: 0) {
             Text(calendar.shortWeekdaySymbols[calendar.component(.weekday, from: date) - 1])
                 .frame(width: 50, alignment: .leading)
-            
+                .padding(.leading, 4)
+                .foregroundColor(.secondary)
+
             tasksForDate(date)
+                .padding(4)
+                .background(Color.secondaryBackgroundColor)
+                .cornerRadius(8)
+                .shadow(radius: 1)
         }
         .frame(height: 100)
-        .border(Color.gray.opacity(0.2), width: 0.5)
+        .padding(.horizontal)
     }
-    
+
     private func hourRow(for hour: Int) -> some View {
         HStack(spacing: 0) {
             Text("\(hour):00")
                 .frame(width: 50, alignment: .trailing)
                 .padding(.trailing, 8)
-            
+                .foregroundColor(.secondary)
+
             tasksForHour(hour)
+                .padding(4)
+                .background(Color.secondaryBackgroundColor)
+                .cornerRadius(8)
+                .shadow(radius: 1)
         }
         .frame(height: 60)
-        .border(Color.gray.opacity(0.2), width: 0.5)
+        .padding(.horizontal)
     }
-    
+
     private func tasksForDate(_ date: Date) -> some View {
         let dayTasks = tasks.filter { calendar.isDate($0.deadline, inSameDayAs: date) }
         return VStack(alignment: .leading, spacing: 2) {
@@ -192,30 +234,33 @@ struct CalendarView: View {
                 Text(task.name)
                     .font(.system(size: 12))
                     .lineLimit(1)
-                    .padding(2)
+                    .padding(4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(taskColor(for: task))
-                    .cornerRadius(2)
+                    .foregroundColor(.white)
+                    .cornerRadius(4)
             }
         }
     }
-    
+
     private func tasksForHour(_ hour: Int) -> some View {
         let hourTasks = tasks.filter {
             calendar.component(.hour, from: $0.deadline) == hour &&
-            calendar.isDate($0.deadline, inSameDayAs: selectedDate)
+                calendar.isDate($0.deadline, inSameDayAs: selectedDate)
         }
         return VStack(alignment: .leading, spacing: 2) {
             ForEach(hourTasks) { task in
                 Text(task.name)
                     .font(.system(size: 12))
                     .lineLimit(1)
-                    .padding(2)
+                    .padding(4)
                     .background(taskColor(for: task))
-                    .cornerRadius(2)
+                    .foregroundColor(.white)
+                    .cornerRadius(4)
             }
         }
     }
-    
+
     private var dayOfWeekHeader: some View {
         HStack(spacing: 0) {
             ForEach(calendar.shortWeekdaySymbols, id: \.self) { day in
@@ -223,11 +268,12 @@ struct CalendarView: View {
                     .frame(maxWidth: .infinity)
                     .font(.caption)
                     .padding(.vertical, 5)
-                    .background(Color.gray.opacity(0.2))
+                    .background(Color.secondaryBackgroundColor)
+                    .foregroundColor(.primary)
             }
         }
     }
-    
+
     private func daysInMonth() -> [Date?] {
         guard let monthInterval = calendar.dateInterval(of: .month, for: currentMonth),
               let monthFirstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start),
@@ -235,33 +281,34 @@ struct CalendarView: View {
         else {
             return []
         }
-        
+
         let dateInterval = DateInterval(start: monthFirstWeek.start, end: monthLastWeek.end)
         return calendar.generateDates(for: dateInterval, matching: DateComponents(hour: 0, minute: 0, second: 0))
             .map { date in
                 if calendar.isDate(date, equalTo: monthInterval.start, toGranularity: .month) ||
-                   calendar.isDate(date, equalTo: monthInterval.end, toGranularity: .month) {
+                    calendar.isDate(date, equalTo: monthInterval.end, toGranularity: .month) {
                     return date
                 }
                 return nil
             }
     }
-    
+
     private func moveMonth(by months: Int) {
         if let newMonth = calendar.date(byAdding: .month, value: months, to: currentMonth) {
             currentMonth = newMonth
         }
     }
-    
+
     private func taskColor(for task: Task) -> Color {
-        .blue.opacity(0.3)
+        // Assign colors based on task properties if available
+        return Color.primaryColor.opacity(0.7)
     }
 }
 
 extension Calendar {
     func generateDates(for dateInterval: DateInterval, matching components: DateComponents) -> [Date] {
         var dates = [dateInterval.start]
-        
+
         enumerateDates(startingAfter: dateInterval.start,
                        matching: components,
                        matchingPolicy: .nextTime) { date, _, stop in
@@ -273,26 +320,27 @@ extension Calendar {
                 }
             }
         }
-        
+
         return dates
     }
-    
+
     func daysOfWeek(for date: Date) -> [Date] {
         guard let weekInterval = dateInterval(of: .weekOfYear, for: date) else { return [] }
         return generateDates(for: weekInterval, matching: DateComponents(hour: 0, minute: 0, second: 0))
     }
 }
 
-
 struct TaskTableView: View {
     let tasks: [Task]
-    
+
     var body: some View {
-        List(tasks) { task in
-            NavigationLink(destination: TaskDetailView(task: task)) {
-                TaskRow(task: task)
+        List {
+            ForEach(tasks) { task in
+                NavigationLink(destination: TaskDetailView(task: task)) {
+                    TaskRow(task: task)
+                }
+                .listRowBackground(Color.secondaryBackgroundColor)
             }
-            .listRowBackground(Color(nsColor: .controlBackgroundColor).opacity(0.1))
         }
         .listStyle(PlainListStyle())
     }
@@ -300,9 +348,9 @@ struct TaskTableView: View {
 
 struct TaskRow: View {
     let task: Task
-    
+
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(task.name)
                 .font(.headline)
                 .foregroundColor(.primary)
@@ -311,32 +359,36 @@ struct TaskRow: View {
                 .foregroundColor(.secondary)
             Text("Deadline: \(task.deadline, style: .date)")
                 .font(.caption)
-                .foregroundColor(.blue)
+                .foregroundColor(.accentColor)
         }
-        .padding(.vertical, 5)
+        .padding()
+        .background(Color.secondaryBackgroundColor)
+        .cornerRadius(8)
+        .shadow(radius: 1)
     }
 }
 
 struct TaskDetailView: View {
     @Bindable var task: Task
     @State private var showingEditView = false
-    
+
     var body: some View {
         Form {
-            Section(header: Text("Task Details")) {
+            Section(header: Text("Task Details").foregroundColor(.accentColor)) {
                 Text(task.name)
                     .font(.headline)
                 Text(task.taskDescription)
                 Text("Deadline: \(task.deadline, style: .date)")
             }
-            
-            Section(header: Text("Subtasks")) {
+
+            Section(header: Text("Subtasks").foregroundColor(.accentColor)) {
                 if let subtasks = task.subtasks, !subtasks.isEmpty {
                     ForEach(subtasks) { subtask in
                         Text(subtask.name)
                     }
                 } else {
                     Text("No subtasks")
+                        .foregroundColor(.secondary)
                 }
             }
         }
@@ -346,6 +398,7 @@ struct TaskDetailView: View {
                 Button("Edit") {
                     showingEditView = true
                 }
+                .foregroundColor(.accentColor)
             }
         }
         .sheet(isPresented: $showingEditView) {
@@ -360,13 +413,13 @@ struct AddEditTaskView: View {
     @State private var name = ""
     @State private var taskDescription = ""
     @State private var deadline = Date()
-    
+
     var task: Task?
-    
+
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Task Details").foregroundColor(.blue)) {
+                Section(header: Text("Task Details").foregroundColor(.accentColor)) {
                     TextField("Task Name", text: $name)
                     TextField("Description", text: $taskDescription)
                     DatePicker("Deadline", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
@@ -385,6 +438,7 @@ struct AddEditTaskView: View {
                         saveTask()
                     }
                     .disabled(name.isEmpty)
+                    .foregroundColor(.accentColor)
                 }
             }
             .onAppear {
@@ -395,9 +449,9 @@ struct AddEditTaskView: View {
                 }
             }
         }
-        .accentColor(.blue)
+        .accentColor(.accentColor)
     }
-    
+
     private func saveTask() {
         if let task = task {
             // Update existing task
